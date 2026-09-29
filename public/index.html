@@ -5,11 +5,11 @@
 main{max-width:860px;margin:0 auto;padding:20px 16px 48px}h1{margin:0;font-size:28px}h1 span{background:var(--ac);color:#0d0f0a;padding:0 8px;border-radius:6px}
 .sub{color:var(--mut);margin:6px 0 18px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}.stat b{display:block;font-size:22px}.stat small{color:var(--mut)}
-.row{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.row{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;min-height:84px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px}
 .row:first-child{border-color:var(--ac)}.pos{font-size:20px;font-weight:800;text-align:center}.av{display:flex;gap:10px;align-items:center}
 .av img{width:46px;height:46px;border-radius:50%;border:2px solid var(--line);background:var(--line)}.nm{font-weight:700}.nm a{color:inherit;text-decoration:none}
 .rk{color:var(--mut);font-size:13px}.gain{text-align:right;font-weight:800;font-size:18px}.gain small{display:block;font-weight:400;color:var(--mut);font-size:12px}
-.up{color:var(--up)}.dn{color:var(--dn)}.tabs{display:flex;gap:8px;margin-bottom:12px}.tabs button{background:var(--card);color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;font:inherit}.tabs button.on{background:var(--ac);color:#0d0f0a;border-color:var(--ac);font-weight:700}.emb{width:54px;height:54px;object-fit:contain;display:block;margin-left:auto}.foot{color:var(--mut);font-size:12px;text-align:center;margin-top:14px}
+.up{color:var(--up)}.dn{color:var(--dn)}.tabs{display:flex;gap:8px;margin-bottom:12px}.tabs button{background:var(--card);color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;font:inherit}.tabs button.on{background:var(--ac);color:#0d0f0a;border-color:var(--ac);font-weight:700}.emb{width:120px;height:120px;object-fit:contain;display:block;margin:-30px 0 -26px}.rank{display:flex;flex-direction:column;align-items:center;min-width:120px}.rank small{font-size:17px;font-weight:800;color:var(--tx)!important;margin-top:0}.foot{color:var(--mut);font-size:12px;text-align:center;margin-top:14px}
 </style></head><body><main>
 <h1>SoloQ <span>Challenge</span></h1><p class="sub">Quién sube más hasta el 31 de diciembre 🍻</p>
 <div class="stats"><div class="stat"><b id="d">–</b><small>días restantes</small></div><div class="stat"><b id="n">–</b><small>jugadores</small></div><div class="stat"><b id="t">–</b><small>líder</small></div></div>
@@ -38,7 +38,7 @@ function draw(){
   return `<div class="row"><div class="pos">${['🥇','🥈','🥉'][i]||i+1}</div><div class="av"><img src="${ic}" alt=""><div>
   <div class="nm"><a target="_blank" rel="noopener" href="https://www.op.gg/summoners/${p.region}/${encodeURIComponent(nm)}-${encodeURIComponent(tg)}">${e(nm)}<span class="rk">#${e(tg)}</span></a></div>
   <div class="rk">${fmt(p.now)}${p.now?` · ${p.now.w}W ${p.now.l}L`:''}${p.err?' · ⚠️ '+e(p.err):''}</div></div></div>
-  ${mode==='elo'?`<div class="gain">${p.now?`<img class="emb" data-n="0" data-t="${p.now.tier}" src="${URLS[0](p.now.tier.toLowerCase())}" onerror="fb(this)" alt="">`:'–'}<small>${p.now?rname(p.now):'Sin rango'}</small></div>`:`<div class="gain ${g>=0?'up':'dn'}">${g==null?'–':(g>=0?'+':'')+g}<small>LP netos</small></div>`}</div>`}).join('');
+  ${mode==='elo'?`<div class="gain rank">${p.now?`<img class="emb" data-n="0" data-t="${p.now.tier}" src="${URLS[0](p.now.tier.toLowerCase())}" onerror="fb(this)" alt="">`:'–'}<small>${p.now?rname(p.now):'Sin rango'}</small></div>`:`<div class="gain ${g>=0?'up':'dn'}">${g==null?'–':(g>=0?'+':'')+g}<small>LP netos</small></div>`}</div>`}).join('');
  u.textContent='Actualizado '+new Date(j.updated).toLocaleTimeString();
 }
 load();setInterval(load,60000);
