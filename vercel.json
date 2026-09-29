@@ -1,1 +1,5 @@
-{ "functions": { "api/players.js": { "maxDuration": 30 } } }
+{
+  "cleanUrls": true,
+  "functions": { "api/players.js": { "maxDuration": 30 }, "api/stats.js": { "maxDuration": 30 } },
+  "crons": [{ "path": "/api/players", "schedule": "0 3 * * *" }]
+}

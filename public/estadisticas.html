@@ -1,0 +1,86 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Estadísticas · SoloQ Challenge</title><style>
+:root{--bg:#0d0f0a;--card:#161a10;--line:#2a3020;--tx:#f2f5e8;--mut:#8b9578;--ac:#E9FF1F;--up:#5dff8f;--dn:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 60px}a{color:var(--ac);text-decoration:none}
+h1{font-size:40px;margin:8px 0;text-transform:uppercase;font-style:italic;font-weight:900}h2{margin:34px 0 10px;text-transform:uppercase;font-style:italic;font-size:22px;border-bottom:2px solid var(--ac);display:inline-block}
+h3{margin:0;font-style:italic;text-transform:uppercase}small,.mut{color:var(--mut)}
+.pills,.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.pills a,.tabs button,#legend button,.more{background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font:inherit;font-size:12px;font-weight:700;text-transform:uppercase;cursor:pointer}
+.tabs button.on{background:var(--ac);color:#0d0f0a;border-color:var(--ac)}#legend button.off{opacity:.35}#legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.tr,.dl,.hl{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}.tr b{width:18px;color:var(--mut)}.tr:first-of-type{border-top:0}
+.tr img,.dl img,.hl img{width:32px;height:32px;border-radius:50%;background:var(--line);object-fit:cover}.hl img{border-radius:6px;width:26px;height:26px}
+.tr span,.hl span,.dl span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tr em{font-style:normal;font-weight:800;color:var(--ac)}
+.up{color:var(--up)}.dn{color:var(--dn)}.big{font-size:22px;font-weight:800}.bar{height:5px;background:var(--line);border-radius:5px;overflow:hidden;margin:6px 0 2px}.bar i{display:block;height:100%;background:var(--up)}
+.hg{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}.hh{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-bottom:6px}.badge{background:#2a3020;color:var(--ac);border-radius:5px;padding:1px 6px;font-size:10px;text-transform:uppercase}
+.center{text-align:center;margin-top:10px}
+</style></head><body><main>
+<a href="/">← Ranking</a><h1>Estadísticas</h1>
+<div class="pills"><a href="#tops">Tops</a><a href="#elo">Elo</a><a href="#coin">Coincidencias</a></div>
+<h2 id="tops">Tops</h2><div class="tabs" id="roles"></div><div class="grid" id="topsg"></div>
+<h2 id="elo">Elo</h2>
+<div class="card"><h3>Mejores días</h3><small>Quién más elo ganó (o perdió) en un solo día</small>
+<div class="tabs"><button id="up" class="on">Subidones</button><button id="dn">Bajones</button></div><div id="days"></div><small>Diferencia entre el cierre de un día y el del anterior.</small></div>
+<div class="card" style="margin-top:12px"><h3>Evolución de elo</h3><small>Clic en un nombre para ocultarlo</small><div id="chart"></div><div class="pills" id="legend"></div></div>
+<h2 id="coin">Coincidencias</h2><p class="mut" id="ncoin"></p><div id="coinb"></div>
+</main><script>
+const TI=['IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'],DV={IV:0,III:1,II:2,I:3};
+const TN={IRON:'Hierro',BRONZE:'Bronce',SILVER:'Plata',GOLD:'Oro',PLATINUM:'Platino',EMERALD:'Esmeralda',DIAMOND:'Diamante',MASTER:'Master',GRANDMASTER:'Grandmaster',CHALLENGER:'Challenger'};
+const BC=['#6B7280','#CD7F32','#94A3B8','#FBBF24','#2DD4BF','#34D399','#60A5FA','#C084FC'],PAL=['#E9FF1F','#01CDFF','#FF86C0','#9B59FF','#FFB86B','#4ECDC4'];
+const ROLES=[['ALL','Todos'],['TOP','Top'],['JUNGLE','Jungla'],['MIDDLE','Mid'],['BOTTOM','ADC'],['UTILITY','Support']];
+const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const elo=(t,r,l)=>{const i=TI.indexOf(t);return i>=7?2800+l:i*400+DV[r]*100+l};
+const rn=(t,r,l)=>TN[t]+(TI.indexOf(t)>=7?'':' '+r)+' · '+l+' LP',pn=r=>r.split('#')[0];
+let D,role='ALL',dmode='up',hidden=new Set(),allDuels=false,allHist=false;
+const av=r=>{const p=D.players.find(x=>x.riot_id===r);return p&&p.icon&&D.ver?`https://ddragon.leagueoflegends.com/cdn/${D.ver}/img/profileicon/${p.icon}.png`:''};
+$('roles').innerHTML=ROLES.map(([k,l])=>`<button data-k="${k}" class="${k==='ALL'?'on':''}">${l}</button>`).join('');
+$('roles').onclick=e=>{const k=e.target.dataset.k;if(!k)return;role=k;[...$('roles').children].forEach(b=>b.className=b.dataset.k===k?'on':'');tops()};
+$('up').onclick=()=>{dmode='up';$('up').className='on';$('dn').className='';days()};
+$('dn').onclick=()=>{dmode='dn';$('dn').className='on';$('up').className='';days()};
+$('legend').onclick=e=>{const b=e.target.closest('button');if(!b)return;const r=b.dataset.r;hidden.has(r)?hidden.delete(r):hidden.add(r);chart()};
+$('coinb').onclick=e=>{if(e.target.dataset.m==='d')allDuels=true;if(e.target.dataset.m==='h')allHist=true;coin()};
+function tops(){
+ const agg={};
+ D.matches.forEach(m=>m.data.forEach(x=>{if(role!=='ALL'&&x.pos!==role)return;const a=agg[x.r]??={k:0,d:0,a:0,cs:0,min:0,n:0};a.k+=x.k;a.d+=x.d;a.a+=x.a;a.cs+=x.cs;a.min+=m.dur/60;a.n++}));
+ const defs=[['Kills','Más asesinatos',a=>a.k,v=>v],['Muertes','Más veces eliminado',a=>a.d,v=>v],['Asistencias','Más asistencias',a=>a.a,v=>v],['CS/min','Farmeo por minuto',a=>a.cs/a.min,v=>v.toFixed(2)],['KDA','(Kills + asistencias) / muertes',a=>(a.k+a.a)/Math.max(1,a.d),v=>v.toFixed(2)]];
+ $('topsg').innerHTML=defs.map(([t,s,f,fm])=>{const l=Object.entries(agg).map(([r,a])=>[r,f(a),a.n]).sort((x,y)=>y[1]-x[1]).slice(0,5);
+  return `<div class="card"><h3>${t}</h3><small>${s}</small>${l.length?l.map(([r,v,n],i)=>`<div class="tr"><b>${i+1}</b><img src="${av(r)}" alt=""><span>${esc(pn(r))}</span><em>${fm(v)}</em><small>${n} part.</small></div>`).join(''):'<p class="mut">Sin partidas todavía</p>'}</div>`}).join('');
+}
+function days(){
+ const day=ts=>new Date(ts).toLocaleDateString('en-CA',{timeZone:'America/Argentina/Buenos_Aires'}),by={},out=[];
+ D.history.forEach(h=>(by[h.riot_id]??=[]).push({d:day(h.ts),e:elo(h.tier,h.rank,h.lp),h}));
+ Object.entries(by).forEach(([r,arr])=>{const close={};arr.forEach(x=>close[x.d]=x);let prev=arr[0].e;Object.keys(close).sort().forEach(d=>{const x=close[d];out.push({r,d,g:x.e-prev,h:x.h});prev=x.e})});
+ const l=out.filter(o=>dmode==='up'?o.g>0:o.g<0).sort((a,b)=>dmode==='up'?b.g-a.g:a.g-b.g).slice(0,8);
+ $('days').innerHTML=l.length?l.map((o,i)=>`<div class="tr"><b>${i+1}</b><img src="${av(o.r)}" alt=""><span>${esc(pn(o.r))}<br><small>${new Date(o.d+'T12:00').toLocaleDateString('es',{day:'numeric',month:'short'})} · ${rn(o.h.tier,o.h.rank,o.h.lp)}</small></span><em class="${o.g>=0?'up':'dn'}">${o.g>0?'+':''}${o.g}</em></div>`).join(''):'<p class="mut">Todavía no hay días para comparar</p>';
+}
+function chart(){
+ const all=D.history,ps=D.players.map(p=>p.riot_id).sort();
+ $('legend').innerHTML=ps.map((r,i)=>`<button data-r="${esc(r)}" class="${hidden.has(r)?'off':''}"><i style="background:${PAL[i%PAL.length]}"></i>${esc(pn(r))}</button>`).join('');
+ if(!all.length){$('chart').innerHTML='<p class="mut">Todavía no hay historial. Se arma solo a medida que se actualizan los rangos.</p>';return}
+ const W=860,H=320,L=40,t0=+new Date(all[0].ts),t1=Math.max(Date.now(),t0+36e5);
+ const es=all.map(h=>elo(h.tier,h.rank,h.lp));const lo=Math.min(...es)-60,hi=Math.max(...es)+60;
+ const X=t=>L+(t-t0)/(t1-t0)*(W-L-8),Y=e=>H-20-(e-lo)/(hi-lo)*(H-40);let s='';
+ for(let i=0;i<8;i++){const a=i*400,b=i<7?a+400:hi+400;if(b<lo||a>hi)continue;const y1=Y(Math.min(b,hi)),y2=Y(Math.max(a,lo));s+=`<rect x="${L}" y="${y1}" width="${W-L-8}" height="${y2-y1}" fill="${BC[i]}" opacity=".1"/><text x="${L+4}" y="${y2-4}" fill="${BC[i]}" font-size="10">${TN[TI[i]]}</text>`}
+ ps.forEach((r,i)=>{if(hidden.has(r))return;const c=PAL[i%PAL.length],pts=all.filter(h=>h.riot_id===r).map(h=>[X(+new Date(h.ts)),Y(elo(h.tier,h.rank,h.lp))]);if(!pts.length)return;pts.push([X(t1),pts[pts.length-1][1]]);
+  s+=`<polyline fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round" points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}"/>`+pts.slice(0,-1).map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="${c}"/>`).join('')});
+ for(let k=0;k<=4;k++){const t=t0+(t1-t0)*k/4;s+=`<text x="${X(t)}" y="${H-4}" fill="#8b9578" font-size="10" text-anchor="middle">${new Date(t).toLocaleDateString('es',{day:'numeric',month:'short'})}</text>`}
+ $('chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${s}</svg>`;
+}
+function coin(){
+ const M=D.matches.filter(m=>m.data.length>1),P={},wins={},duels={},key=(a,b)=>a<b?a+'|'+b:b+'|'+a;
+ $('ncoin').textContent=M.length+' coincidencias hasta ahora';
+ M.forEach(m=>{for(let i=0;i<m.data.length;i++)for(let j=i+1;j<m.data.length;j++){const x=m.data[i],y=m.data[j],k=key(x.r,y.r),[a,b]=k.split('|'),p=P[k]??={a,b,aw:0,bw:0,same:0};
+  if(x.t===y.t)p.same++;else{const w=x.w?x:y;w.r===a?p.aw++:p.bw++;wins[w.r]=(wins[w.r]||0)+1;duels[x.r]=(duels[x.r]||0)+1;duels[y.r]=(duels[y.r]||0)+1}}});
+ const ver=Object.entries(wins).sort((a,b)=>b[1]-a[1]).slice(0,3);
+ const dl=Object.values(P).filter(p=>p.aw+p.bw>0).sort((a,b)=>(b.aw+b.bw)-(a.aw+a.bw));
+ const fd=ts=>new Date(ts).toLocaleString('es',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}),mm=d=>Math.floor(d/60)+':'+String(d%60).padStart(2,'0');
+ const hs=M.slice(0,allHist?60:8);
+ $('coinb').innerHTML=`<h3>Verdugos del torneo</h3><small>Más victorias contra otros participantes</small><div class="grid" style="margin:8px 0 22px">${ver.length?ver.map(([r,w],i)=>`<div class="card"><div class="tr" style="border:0"><b class="big">${i+1}</b><img src="${av(r)}" alt=""><span>${esc(pn(r))}<br><small>${duels[r]} duelos · ${Math.round(w/duels[r]*100)}% ganados</small></span><em class="big up">${w}</em></div></div>`).join(''):'<p class="mut">Sin duelos todavía</p>'}</div>
+ <h3>Duelos</h3><small>Cara a cara acumulado (equipos contrarios)</small><div class="hg" style="margin:8px 0">${dl.slice(0,allDuels?999:6).map(p=>{const t=p.aw+p.bw;return `<div class="card"><div class="dl" style="border:0"><img src="${av(p.a)}" alt=""><span>${esc(pn(p.a))}</span><b class="big"><span class="${p.aw>=p.bw?'up':''}">${p.aw}</span> – <span class="${p.bw>p.aw?'up':''}">${p.bw}</span></b><span style="text-align:right">${esc(pn(p.b))}</span><img src="${av(p.b)}" alt=""></div><div class="bar"><i style="width:${p.aw/t*100}%"></i></div><small>${p.same} partidas en el mismo equipo</small></div>`}).join('')}</div>
+ ${!allDuels&&dl.length>6?`<div class="center"><button class="more" data-m="d">Ver los ${dl.length} duelos</button></div>`:''}
+ <h3 style="margin-top:22px">Historial de coincidencias</h3><small>Últimas partidas compartidas</small><div class="hg" style="margin-top:8px">${hs.map(m=>`<div class="card"><div class="hh"><span>${fd(m.ts)}</span><span>${mm(m.dur)} <b class="badge">${new Set(m.data.map(x=>x.t)).size>1?'Enfrentados':'Mismo equipo'}</b></span></div>${m.data.map(x=>`<div class="hl"><img src="https://ddragon.leagueoflegends.com/cdn/${D.ver}/img/champion/${esc(x.c)}.png" alt="${esc(x.c)}"><span>${esc(pn(x.r))}</span><small>${x.k}/${x.d}/${x.a}</small><b class="${x.w?'up':'dn'}">${x.w?'Victoria':'Derrota'}</b></div>`).join('')}</div>`).join('')}</div>
+ ${!allHist&&M.length>8?'<div class="center"><button class="more" data-m="h">Ver las 60 últimas</button></div>':''}`;
+}
+async function load(){D=await (await fetch('/api/stats')).json();tops();days();chart();coin()}
+load();setInterval(load,120000);
+</script></body></html>

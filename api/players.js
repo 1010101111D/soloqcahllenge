@@ -34,6 +34,8 @@ async function refreshOne(p) {
       if (!p.start_tier) Object.assign(u, { start_tier: e.tier, start_rank: e.rank, start_lp: e.leaguePoints });
     }
   } catch (err) { u.err = err.message; }
+  if (u.tier && (u.tier !== p.tier || u.rank !== p.rank || u.lp !== p.lp))
+    await sb('elo_history', { method: 'POST', body: JSON.stringify({ riot_id: p.riot_id, tier: u.tier, rank: u.rank, lp: u.lp }) });
   await sb(`players?riot_id=eq.${encodeURIComponent(p.riot_id)}`, { method: 'PATCH', body: JSON.stringify(u) });
   return { ...p, ...u };
 }
