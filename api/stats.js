@@ -31,7 +31,10 @@ async function ingest(players) {
   const rows = await (await sb(`matches?select=match_id&match_id=in.(${[...ids].join(',')})`)).json();
   if (!Array.isArray(rows)) dbg.errs.push('tabla matches: ' + JSON.stringify(rows));
   const have = new Set(Array.isArray(rows) ? rows.map(r => r.match_id) : []);
-  for (const id of [...ids].filter(i => !have.has(i)).slice(0, 12)) {
+  const todo = [...ids].filter(i => !have.has(i)), batch = todo.slice(0, 40);
+  dbg.pending = todo.length - batch.length;
+  if (dbg.pending > 0) last = Date.now() - EVERY + 30e3; // si quedan partidas, reintenta en 30 s
+  for (const id of batch) {
     try {
       const { info } = await riot(`https://${ROUTE[id.split('_')[0].toLowerCase()]}.api.riotgames.com/lol/match/v5/matches/${id}`);
       if (info.gameDuration < 300) continue; // remake
