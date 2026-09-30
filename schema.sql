@@ -11,6 +11,6 @@ alter table players enable row level security;  -- sin policies: solo el backend
 -- agregá amigos así (start_* opcional; si no, se fija en el primer chequeo):
 insert into players (riot_id, region) values
   ('Dwaan#QQBB', 'la2'),
-  ('LamidaADomicilio#3948', 'la2'),
+  ('Ramdz#001', 'la2'),
   ('Dalinar Kholin#VAQM', 'la2'),
   ('pizzagod15#zxc', 'la2');
